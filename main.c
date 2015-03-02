@@ -27,6 +27,8 @@ int main(void) {
 
 #include <stdio.h>
 #include "main.h"
+#include "interproc_com.h"
+#include "list_admin.h"
 
 #define TEST_PATTERN_1 0xAA
 #define TEST_PATTERN_2 0x55

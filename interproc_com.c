@@ -139,7 +139,7 @@ exception send_wait(mailbox* mBox, void* pData){
 	return OK;
 }
 
-exception recieve_wait(mailbox *mBox, void *data){
+exception receive_wait(mailbox *mBox, void *data){
     
     volatile bool firstrun = TRUE;
     isr_off();
@@ -283,6 +283,11 @@ int receive_no_wait( mailbox* mBox, void* pData ){
     return status;
 }
 
-
+int no_messages( mailbox* mBox){
+    if(!mBox){
+        return FAIL;
+    }
+    return mBox->nMessages;
+}
 
 
