@@ -88,6 +88,10 @@ exception remove_mailbox( mailbox * mBox){
 }
 
 exception send_wait(mailbox* mBox, void* pData){
+    
+    if( !mBox || !pData){
+        return FAIL;
+    }
 	volatile bool firstrun = TRUE;
 	isr_off();
 	SaveContext();
@@ -99,7 +103,7 @@ exception send_wait(mailbox* mBox, void* pData){
 			recieving_task = mBox->pHead->pNext->pBlock;
 			remove_message(mBox->pHead->pNext);
 			extract_waitinglist(recieving_task);
-			insert_waiting_ready_list(g_readylist,recieving_task);
+			push_list(g_readylist,recieving_task);
             mBox->nMessages--;
             mBox->nBlockedMsg++;
 		}
@@ -120,7 +124,7 @@ exception send_wait(mailbox* mBox, void* pData){
 			mBox->nMessages++;
 			listobj *sending_task;
 			sending_task = extract_readylist();
-			insert_waiting_ready_list(g_waitinglist, sending_task);
+			push_list(g_waitinglist, sending_task);
 		}
 		LoadContext();
 	}
@@ -139,48 +143,55 @@ exception send_wait(mailbox* mBox, void* pData){
 	return OK;
 }
 
-exception receive_wait(mailbox *mBox, void *data){
+exception receive_wait( mailbox *mBox, void *data ){
     
-    volatile bool firstrun = TRUE;
+    volatile int firstrun = TRUE;
     isr_off();
     SaveContext();
     
     if(firstrun){
         firstrun = FALSE;
         
-        if( mBox->nBlockedMsg > 0 ){
-            memcpy(mBox->pHead->pNext->pData, data, mBox->nDataSize);
-            remove_message(mBox->pHead->pNext);
-            mBox->nBlockedMsg--;
-            mBox->nMessages--;
+        if(mBox->nBlockedMsg > 0 && mBox->pHead->pNext != mBox->pTail){
             
-            if(mBox->nBlockedMsg < 0){
-                listobj *sending_task;
-                sending_task = mBox->pHead->pNext->pBlock;
-                extract_waitinglist(sending_task);
-                insert_waiting_ready_list(g_readylist, sending_task);
-                mBox->nBlockedMsg--;
-                mBox->nMessages++;
+            msg* sender = pop_mailbox(mBox);
+            
+            memcpy(mBox->pHead->pNext->pData, data, mBox->nDataSize);
+            free(sender->pData);
+            
+            if(mBox->nBlockedMsg != NULL){
+                extract_waitinglist(sender->pBlock);
+                push_list(g_readylist, sender->pBlock);
             }
-            else{
-                free(mBox->pHead->pNext->pData);
-            }
+            mBox->nBlockedMsg--;
+            free(sender);
         }
+        
         else{
             listobj *recieving_task;
             msg *message = malloc(sizeof(msg));
-            mBox->pHead->pNext = message;
+            exception status = push_mailbox(mBox,message);
+            
             recieving_task = extract_readylist();
-            insert_waiting_ready_list(g_waitinglist, recieving_task);
+            push_list(g_waitinglist, recieving_task);
         }
         LoadContext();
     }
+    
     else{
         if(g_waitinglist->pHead->pNext->pTask->DeadLine <= TC){
             isr_off();
-            remove_message(mBox->pHead->pNext);
+            
+            g_readylist->pHead->pNext->pMessage->pNext->pPrevious = g_readylist->pHead->pNext->pMessage->pPrevious;
+            g_readylist->pHead->pNext->pMessage->pPrevious->pNext = g_readylist->pHead->pNext->pMessage->pNext;
+            
+            free(g_readylist->pHead->pNext->pMessage);
+            
             mBox->nMessages--;
             mBox->nBlockedMsg++;
+            
+            
+            isr_on();
             return DEADLINE_REACHED;
         }
         else{
@@ -207,7 +218,7 @@ exception send_no_wait(mailbox *mBox, void *data){
             exception status = extract_waitinglist(receiver->pBlock);
             assert(status == OK);
             
-            status = insert_waiting_ready_list(g_readylist, receiver->pBlock);
+            status = push_list(g_readylist, receiver->pBlock);
             assert(status == OK);
             
             free(receiver);
@@ -267,7 +278,7 @@ int receive_no_wait( mailbox* mBox, void* pData ){
                 status = extract_waitinglist(sender->pBlock);
                 assert(status == OK);
                 
-                status = insert_waiting_ready_list(g_readylist, sender->pBlock);
+                status = push_list(g_readylist, sender->pBlock);
                 assert(status == OK);
             }
             free(sender->pData);

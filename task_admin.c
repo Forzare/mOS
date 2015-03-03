@@ -6,94 +6,130 @@
 //  Copyright (c) 2015 Markus & Oskar. All rights reserved.
 //
 
-#include <stdio.h>
 #include "list_admin.h"
 #include "timing.h"
 #include "main.h"
-#include "kernel.h"
 
-int g_running_mode = FALSE;
-int g_firstrun = TRUE;
+bool State = INIT;
+
+
+void idle(){
+    
+    for(;;);
+}
 
 exception init_kernel(void){
     set_ticks(0);
-	
-	g_readylist = create_list();
-	
-	if(g_readylist == NULL){
-	
-		return FAIL;
-	}
-	
+    g_readylist = create_list();
+    g_readylist->pHead->pNext = g_readylist->pTail;
+    g_readylist->pTail->pPrevious = g_readylist->pHead;
+    if(g_readylist == NULL){
+        
+        free(g_readylist);
+        return FAIL;
+    }
+    
     g_timerlist = create_list();
-	
-	if(g_timerlist == NULL){
-		return FAIL;
-	}
-	
+    g_timerlist->pHead->pNext = g_timerlist->pTail;
+    g_timerlist->pTail->pPrevious = g_timerlist->pHead;
+    if(g_timerlist == NULL){
+        free(g_readylist);
+        free(g_timerlist);
+        return FAIL;
+    }
+    
     g_waitinglist = create_list();
-	
-	if(g_waitinglist == NULL){
-		
-		return FAIL;
-	}
-	return OK;
+    g_waitinglist->pHead->pNext = g_waitinglist->pTail;
+    g_waitinglist->pTail->pPrevious = g_waitinglist->pHead;
+    
+    if(g_waitinglist == NULL){
+        free(g_readylist);
+        free(g_timerlist);
+        free(g_waitinglist);
+        return FAIL;
+    }
+    
+    exception status = create_task(&idle, 0);
+    
+    if(status != OK){
+        
+        free(g_readylist);
+        free(g_timerlist);
+        free(g_waitinglist);
+        
+        return status;
+    }
+    
+    State = INIT;
+    return OK;
 }
 
-exception create_task( void(*body)(), uint d ){
+exception create_task(void(*body)(), uint d){
+    volatile int firstrun = 1;
     int status;
-    TCB *newTCB = malloc(sizeof(TCB));
-    listobj *newObj = malloc(sizeof(listobj));
-    if((newObj == 0) && (newTCB == 0)){
+    TCB *newTCB = (TCB*)malloc(sizeof(TCB));
+    listobj *newObj = (listobj*)malloc(sizeof(listobj));
+    if((newObj == NULL) || (newTCB == NULL)){
         free(newTCB);
         free(newObj);
         return FAIL;
     }
+    
+    if(d == 0){
+        newTCB->DeadLine = 0xffffffff;
+    }
+    
     else{
+        newTCB->DeadLine = ticks() + d;
+    }
+    newTCB->PC = body;
+    newTCB->SP = &newTCB->StackSeg[STACK_SIZE-1];
+    
+    newObj->pTask = newTCB;
+    newObj->nTCnt = ticks();
+    if (!State) {
+        status = push_list(g_readylist,newObj);
         
-        newTCB->DeadLine = d;
-        newTCB->PC = body;
-        newTCB->SP = &(newTCB->StackSeg[99]);
-        if (g_running_mode == 0) {
-            status = insert_waiting_ready_list(g_readylist,newObj);
+        if(status != OK){
             
-            newTCB->DeadLine = d;
-            newTCB->PC = body;
-            newTCB->SP = &(newTCB->StackSeg[99]);
-            if (g_running_mode == 0) {
-                status = insert_waiting_ready_list(g_readylist,newObj);
-                return status;
+            free(newTCB);
+        }
+        return status;
+    }
+    
+    else{
+        isr_off();
+        
+        SaveContext();
+        if (firstrun) {
+            firstrun = 0;
+            status = push_list(g_readylist, newObj);
+            
+            if(status != OK){
+                free(newTCB);
             }
-            else{
-                isr_off();
-                SaveContext();
-                if (g_firstrun == 1) {
-                    g_firstrun = 0;
-                    status = insert_waiting_ready_list(g_readylist, newObj);
-                    LoadContext();
-                }
-            }
-            return status;
+            LoadContext();
         }
     }
+    Running = peek_list(g_readylist)->pTask;
+    
     return status;
 }
 
-void run(void){
 
-	//Initialize interrupts
-	
-	g_running_mode = TRUE;
-	isr_on();
-	LoadContext();
+void run(void){
+    
+    //timer0_start();
+    State = RUNNING;
+    Running = peek_list(g_readylist)->pTask;
+    isr_on();
+    LoadContext();
 }
 
 void terminate(void){
-	
-	listobj *remove_object;
-	remove_object = extract_readylist();
-	remove_object = extract_readylist();
-	free(remove_object);
-	LoadContext();
-
+    
+    listobj *remove_object;
+    remove_object = extract_readylist();
+    free(remove_object);
+    LoadContext();
 }

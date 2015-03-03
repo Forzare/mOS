@@ -14,7 +14,6 @@
 
 int w_firstrun = TRUE;
 int sd_firstrun = TRUE;
-uint TC = 0;
 
 exception wait1( uint nTicks ){
     int status = DEADLINE_REACHED;
@@ -59,7 +58,7 @@ void set_deadline( uint nNew ){
         firstrun = FALSE;
         g_readylist->pHead->pNext->pTask->DeadLine = nNew;
         listobj *temp = extract_readylist();
-        insert_waiting_ready_list(g_readylist, temp);
+        push_list(g_readylist, temp);
         LoadContext();
     }
 }
@@ -69,18 +68,26 @@ void TimerInt(void){
     listobj *newObj = g_timerlist->pHead->pNext;
     while (newObj != g_timerlist->pTail && TC >= newObj->nTCnt) {
         extract_timerlist();
-        insert_waiting_ready_list(g_readylist, newObj);
+        push_list(g_readylist, newObj);
         newObj = g_timerlist->pHead->pNext;
     }
     newObj = g_waitinglist->pHead->pNext;
     while(newObj != g_waitinglist->pTail){
         if(newObj->pTask->DeadLine <= TC){
-            insert_waiting_ready_list(g_readylist, newObj);
+            push_list(g_readylist, newObj);
             extract_waitinglist(newObj);
             newObj = g_waitinglist->pHead->pNext;
         }
     }
 }
 
+
+void isr_off(void){
+    //set_isr (isr_off)
+}
+
+void isr_on(void){
+    //set_isr (isr_on)
+}
 
 

@@ -6,14 +6,29 @@
 //  Copyright (c) 2015 Markus & Oskar. All rights reserved.
 //
 
+/*
+#define MEMWATCH
+
 #include <stdio.h>
 #include "list_admin.h"
 #include "main.h"
-#include "interproc_com.h"
+#include "memwatch.h"
 
 int g_running_mode = FALSE;
 int g_firstrun = TRUE;
-uint TC;
+unsigned int TC;
+
+int main(void) {
+    TC = 0;
+    init_kernel();
+    
+    return 0;
+}*/
+
+#include <stdio.h>
+#include "main.h"
+#include "interproc_com.h"
+#include "list_admin.h"
 
 #define TEST_PATTERN_1 0xAA
 #define TEST_PATTERN_2 0x55
