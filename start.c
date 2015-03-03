@@ -8,7 +8,8 @@
 
 #include "kernel.h"
 #include <assert.h>
-
+#include "start.h"
+#include "main.h"
 
 mailbox *mb = NULL;
 
@@ -16,6 +17,9 @@ mailbox *mb = NULL;
 volatile bool nTests[50];
 
 void task1();
+
+void increment_task();
+
 
 void task2();
 
@@ -45,9 +49,11 @@ void start(){
 
 void task1(){
 	
+       
+  
 	create_task(task2,4000);
 	assert(nTests[0] == FALSE);
-	wait1(20);
+	wait(20);
 	assert(nTests[0] == TRUE);
 	
 

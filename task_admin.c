@@ -76,11 +76,11 @@ exception init_kernel(void){
     
 }
 
-exception create_task(void(*body)(), uint d){
+exception create_task(void(* body)(), uint d){
   volatile int firstrun = 1;
     int status;
-    TCB *newTCB = (TCB*)malloc(sizeof(TCB));
-    listobj *newObj = (listobj*)malloc(sizeof(listobj));
+    TCB *newTCB = malloc(sizeof(TCB));
+    listobj *newObj = malloc(sizeof(listobj));
     if((newObj == NULL) || (newTCB == NULL)){
         free(newTCB);
         free(newObj);
@@ -96,6 +96,7 @@ exception create_task(void(*body)(), uint d){
     else{
       newTCB->DeadLine = ticks() + d;
     }
+        //newTCB->PC = malloc(sizeof(body));
         newTCB->PC = body;
         newTCB->SP = &newTCB->StackSeg[STACK_SIZE-1];
         

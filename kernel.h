@@ -17,7 +17,7 @@
 
 #else
 
-#define CONTEXT_SIZE    13 
+#define CONTEXT_SIZE    13
 #define STACK_SIZE      100
 #endif
 
@@ -58,6 +58,9 @@ typedef struct
 #else
 typedef struct
 {
+         
+  
+        
         uint    Context[CONTEXT_SIZE];        
         uint    *SP;
         void    (*PC)();

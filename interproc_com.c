@@ -120,7 +120,7 @@ exception send_wait(mailbox* mBox, void* pData){
 			
 			
 			extract_waitinglist(reciever->pBlock);
-			insert_waiting_ready_list(g_readylist,reciever->pBlock);
+			push_list(g_readylist,reciever->pBlock);
 			mBox->nBlockedMsg++;
 		}
 		

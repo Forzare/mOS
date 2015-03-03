@@ -6,23 +6,20 @@
 //  Copyright (c) 2015 Markus & Oskar. All rights reserved.
 //
 
-#include "timing.h"
 #include "main.h"
 #include "kernel.h"
 #include "list_admin.h"
-#include "memwatch.h"
 #include "kernel_hwdep.h"
 
-int w_firstrun = TRUE;
-int sd_firstrun = TRUE;
 
 exception wait(uint nTicks){
+  volatile int firstrun = TRUE;
     int status = DEADLINE_REACHED;
     listobj * tempObj;
     isr_off();
     SaveContext();
-    if (w_firstrun) {
-        w_firstrun = FALSE;
+    if (firstrun) {
+        firstrun = FALSE;
         tempObj = extract_readylist();
         tempObj->nTCnt = nTicks + TC;
         insert_timerlist(tempObj, tempObj->nTCnt);
@@ -55,8 +52,8 @@ void set_deadline(uint nNew){
     volatile int firstrun = TRUE;
     isr_off();
     SaveContext();
-    if (sd_firstrun) {
-        sd_firstrun = FALSE;
+    if (firstrun) {
+        firstrun = FALSE;
         g_readylist->pHead->pNext->pTask->DeadLine = nNew;
         listobj *temp = extract_readylist();
         push_list(g_readylist, temp);
@@ -81,6 +78,8 @@ void TimerInt(void){
         }
     }
 }
+
+
 
 void     isr_off(void){
 

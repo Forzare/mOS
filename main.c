@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include "list_admin.h"
 #include "main.h"
+#include "start.h"
 
 
 
@@ -20,17 +21,15 @@ uint TC;
 
 
 void x(){
-
+  
   int y = 5;
-
+  
 }
 
 int main(void) {
     TC = 0;
     init_kernel();
-    create_task(x,1000);
-    run();
-    
+    start();
     
     return 0;
 }
