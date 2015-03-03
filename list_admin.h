@@ -20,13 +20,17 @@ extern list *g_waitinglist;
 /** Functions **/
 list* create_list(void);
 
+
 /*Inserting objects in lists*/
 int insert_timerlist(listobj *insert_object, int nTCnt);
-int insert_waiting_ready_list(list *list, listobj *insert_object);
+exception push_list(list *list, listobj *insert_object);
 
 /*Extracting objects from lists*/
 listobj* extract_timerlist(void);
 exception extract_waitinglist(listobj *object);
 listobj* extract_readylist(void);
+
+listobj* peek_list(list *target);
+
 
 #endif /* defined(__mOS_DSTII__linkedlist__) */
