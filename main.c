@@ -75,7 +75,8 @@ void task2(void){
     /* start test 2 */
     if( no_messages(mb) != 1 ) terminate(); /* ERROR */
     if(receive_wait(mb,&nData_t2) == DEADLINE_REACHED) /* t1 ko¨r nu */
-        terminate(); /* ERROR */ if( no_messages(mb) != 0 )
+        terminate(); /* ERROR */ 
+    if( no_messages(mb) != 0 )
             terminate(); /* ERROR */
     if (nData_t2 == TEST_PATTERN_2) nTest2 = 1;
     /* Start test 3 */

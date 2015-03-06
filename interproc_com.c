@@ -167,7 +167,7 @@ exception send_wait(mailbox* mBox, void* pData){
 	
 	else{
 		
-		if(g_waitinglist->pHead->pNext->pTask->DeadLine <= TC){
+		if(Running->DeadLine < ticks()){
 			isr_off();
 
 			g_readylist->pHead->pNext->pMessage->pNext->pPrevious = g_readylist->pHead->pNext->pMessage->pPrevious;
@@ -205,7 +205,7 @@ exception receive_wait(mailbox *mBox, void *data){
                   
                         msg* sender = pop_mailbox(mBox);
                         
-			memcpy(mBox->pHead->pNext->pData, data, mBox->nDataSize);
+			memcpy(data, sender->pData, mBox->nDataSize);
                         free(sender->pData);
 			
 
