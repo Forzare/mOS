@@ -239,6 +239,7 @@ exception receive_wait(mailbox *mBox, void *data){
                 message->pBlock = receiving_task;
                 receiving_task->pMessage = message;
                 mBox->nBlockedMsg--;
+                mBox->nMessages++;
                 Running = peek_list(g_readylist)->pTask;
                 
                 

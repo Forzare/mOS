@@ -77,6 +77,7 @@ void TimerInt(void){
     obj = peek_list(g_waitinglist);
     while(obj != NULL && obj->pTask->DeadLine < ticks()){
             exception status = push_list(g_readylist, pop_list(g_waitinglist));
+            
             obj = peek_list(g_waitinglist);
     }
     

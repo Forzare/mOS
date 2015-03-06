@@ -19,7 +19,11 @@ bool State = INIT;
 
 void idle(){
 
-	for(;; TimerInt());
+  for(;;){
+        SaveContext();
+        TimerInt();
+        LoadContext();         
+  }
 	
 }
 
@@ -131,6 +135,7 @@ exception create_task(void(* body)(), uint d){
                   
                 }
                   
+                
                 Running = peek_list(g_readylist)->pTask;
                 LoadContext();
             }
