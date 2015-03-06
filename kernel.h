@@ -37,6 +37,14 @@
 #define SENDER          +1
 #define RECEIVER        -1
 
+//Egna macro
+#ifdef MY_MALLOC
+extern int mCount;
+#define malloc(x) malloc(x);mCount++
+#define free(x) free(x);mCount--
+#endif
+
+
 
 typedef int             exception;
 typedef int             bool;
@@ -124,7 +132,7 @@ exception	send_no_wait( mailbox* mBox, void* pData );
 int             receive_no_wait( mailbox* mBox, void* pData );
 
 // Timing
-exception	wait1( uint nTicks );
+exception	wait( uint nTicks );
 void            set_ticks( uint no_of_ticks );
 uint            ticks( void );
 uint		deadline( void );

@@ -1,4 +1,3 @@
-//
 //  interproc_com.h
 //  mOS
 //
@@ -10,17 +9,6 @@
 #define __mOS__interproc_com__
 
 #include <stdio.h>
-#include "kernel.h"
 
-exception push_mailbox(mailbox *mBox, msg *message);
-msg* pop_mailbox(mailbox *mBox);
-void remove_message(msg *new_message);
-mailbox* create_mailbox( uint nMessages, uint nDataSize );
-exception remove_mailbox( mailbox * mBox);
-exception send_wait(mailbox* mBox, void* pData);
-exception receive_wait(mailbox *mBox, void *data);
-exception send_no_wait(mailbox *mBox, void *data);
-int receive_no_wait( mailbox* mBox, void* pData );
-int no_messages( mailbox* mBox);
 
 #endif /* defined(__mOS__interproc_com__) */

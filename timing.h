@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 
+void TimerInt(void);
 
 
 #endif /* defined(__mOS__timing__) */

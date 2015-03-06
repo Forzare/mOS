@@ -9,127 +9,164 @@
 #include "list_admin.h"
 #include "timing.h"
 #include "main.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include "kernel.h"
+
+
+#ifdef MY_MALLOC
+int mCount = 0;
+#endif
 
 bool State = INIT;
 
 
 void idle(){
-    
-    for(;;);
+
+    for(;;){
+        SaveContext();
+        TimerInt();
+        LoadContext();
+    }
+}
+
+void * myMalloc( int size ){
+    isr_off();
+    void *p;
+    int count = 0;
+    p = malloc( size );
+    if (p != NULL) {
+        count++;
+    }
+    isr_on();
+    return p;
 }
 
 exception init_kernel(void){
     set_ticks(0);
-    g_readylist = create_list();
-    g_readylist->pHead->pNext = g_readylist->pTail;
-    g_readylist->pTail->pPrevious = g_readylist->pHead;
-    if(g_readylist == NULL){
-        
-        free(g_readylist);
-        return FAIL;
-    }
+      g_readylist = create_list();
+      
+      
+      g_readylist->pHead->pNext = g_readylist->pTail;
+      g_readylist->pTail->pPrevious = g_readylist->pHead;
+	if(g_readylist == NULL){
+	
+		free(g_readylist);
+		return FAIL;
+	}
     
-    g_timerlist = create_list();
-    g_timerlist->pHead->pNext = g_timerlist->pTail;
-    g_timerlist->pTail->pPrevious = g_timerlist->pHead;
-    if(g_timerlist == NULL){
-        free(g_readylist);
-        free(g_timerlist);
-        return FAIL;
-    }
+      g_timerlist = create_list();
+      g_timerlist->pHead->pNext = g_timerlist->pTail;
+      g_timerlist->pTail->pPrevious = g_timerlist->pHead;
+	if(g_timerlist == NULL){
+		free(g_readylist);
+		free(g_timerlist);
+		return FAIL;
+	}
+	
+      g_waitinglist = create_list();
+      g_waitinglist->pHead->pNext = g_waitinglist->pTail;
+      g_waitinglist->pTail->pPrevious = g_waitinglist->pHead;
+	
+	if(g_waitinglist == NULL){
+		free(g_readylist);
+		free(g_timerlist);
+		free(g_waitinglist);
+		return FAIL;
+	}
+	
+	exception status = create_task(&idle, 0);
+	
+	if(status != OK){
+		
+		free(g_readylist);
+		free(g_timerlist);
+		free(g_waitinglist);
+		
+		return status;
+	}
     
-    g_waitinglist = create_list();
-    g_waitinglist->pHead->pNext = g_waitinglist->pTail;
-    g_waitinglist->pTail->pPrevious = g_waitinglist->pHead;
-    
-    if(g_waitinglist == NULL){
-        free(g_readylist);
-        free(g_timerlist);
-        free(g_waitinglist);
-        return FAIL;
-    }
-    
-    exception status = create_task(&idle, 0);
-    
-    if(status != OK){
-        
-        free(g_readylist);
-        free(g_timerlist);
-        free(g_waitinglist);
-        
-        return status;
-    }
-    
-    State = INIT;
-    return OK;
+	State = INIT;
+	return OK;
 }
 
-exception create_task(void(*body)(), uint d){
-    volatile int firstrun = 1;
+exception create_task(void(* body)(), uint d){
+  volatile int firstrun = TRUE;
     int status;
-    TCB *newTCB = (TCB*)malloc(sizeof(TCB));
-    listobj *newObj = (listobj*)malloc(sizeof(listobj));
+    TCB *newTCB = malloc(sizeof(TCB));
+    listobj *newObj = malloc(sizeof(listobj));
     if((newObj == NULL) || (newTCB == NULL)){
         free(newTCB);
         free(newObj);
         return FAIL;
     }
-    
+  
     if(d == 0){
-        newTCB->DeadLine = 0xffffffff;
+      
+      newTCB->DeadLine = 0xffffffff;
+      
     }
-    
+      
     else{
-        newTCB->DeadLine = ticks() + d;
+      newTCB->DeadLine = ticks() + d;
     }
-    newTCB->PC = body;
-    newTCB->SP = &newTCB->StackSeg[STACK_SIZE-1];
-    
-    newObj->pTask = newTCB;
-    newObj->nTCnt = ticks();
-    if (!State) {
-        status = push_list(g_readylist,newObj);
+        newTCB->PC = body;
+        newTCB->SP = &(newTCB->StackSeg[STACK_SIZE-1]);
         
-        if(status != OK){
-            
+        newObj->pTask = newTCB;
+        newObj->nTCnt = ticks();
+        if (!State) {
+            status = push_list(g_readylist,newObj);
+
+          
+          if(status != OK){
+          
             free(newTCB);
+           
+          }
+           return status;
         }
-        return status;
-    }
-    
-    else{
-        isr_off();
-        
-        SaveContext();
-        if (firstrun) {
-            firstrun = 0;
-            status = push_list(g_readylist, newObj);
+          
+       else{
+            isr_off();
             
-            if(status != OK){
-                free(newTCB);
+            SaveContext();
+            if (firstrun) {
+               firstrun = 0;
+
+                status = push_list(g_readylist, newObj);
+                
+                if(status != OK){
+                 
+                  free(newTCB);
+                  
+                }
+                  
+                Running = peek_list(g_readylist)->pTask;
+                LoadContext();
             }
-            LoadContext();
         }
-    }
-    Running = peek_list(g_readylist)->pTask;
     
-    return status;
+        return status;  
 }
 
-
 void run(void){
-    
-    //timer0_start();
-    State = RUNNING;
-    Running = peek_list(g_readylist)->pTask;
-    isr_on();
-    LoadContext();
+
+	//timer0_start();	
+	State = RUNNING;
+        Running = peek_list(g_readylist)->pTask;
+	isr_on();
+	LoadContext();
 }
 
 void terminate(void){
-    
-    listobj *remove_object;
-    remove_object = extract_readylist();
-    free(remove_object);
-    LoadContext();
+	
+	listobj *remove_object;
+
+	remove_object = extract_readylist();
+        
+	free(remove_object);
+    Running = peek_list(g_readylist)->pTask;
+	LoadContext();
+
 }

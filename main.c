@@ -1,3 +1,4 @@
+
 //
 //  main.c
 //  mOS DSTII
@@ -10,9 +11,10 @@
 #include "list_admin.h"
 #include "main.h"
 #include "interproc_com.h"
+#include <stdio.h>
+#include <string.h>
+#include "kernel.h"
 
-int g_running_mode = FALSE;
-int g_firstrun = TRUE;
 uint TC;
 
 #define TEST_PATTERN_1 0xAA
@@ -44,13 +46,13 @@ int main(void){
 
 void task1(void){
     
-    int nData_t1 = TEST_PATTERN_1; wait1(10); /* task2 borjar kora */
+    int nData_t1 = TEST_PATTERN_1; wait(10); /* task2 borjar kora */
     if( no_messages(mb) != 1 ) terminate(); /* ERROR */
     if(send_wait(mb,&nData_t1) == DEADLINE_REACHED) terminate(); /* ERROR */
-    wait1(10); /* task2 börjar köra */ /* start test 2 */
+    wait(10); /* task2 bo®rjar ko®ra */ /* start test 2 */
     nData_t1 = TEST_PATTERN_2;
     if(send_wait(mb,&nData_t1) == DEADLINE_REACHED)
-        terminate(); /* ERROR */ wait1(10); /* task2 börjar köra */
+        terminate(); /* ERROR */ wait(10); /* task2 bo®rjar ko®ra */
     /* start test 3 */
     if(send_wait(mb,&nData_t1)==DEADLINE_REACHED) {
         if( no_messages(mb) != 0 )
@@ -68,12 +70,12 @@ void task1(void){
 void task2(void){
     int nData_t2 = 0;
     if(receive_wait(mb,&nData_t2) ==
-       DEADLINE_REACHED) /* t1 kör nu */ terminate(); /* ERROR */
+       DEADLINE_REACHED) /* t1 ko®r nu */ terminate(); /* ERROR */
     if( no_messages(mb) != 0 ) terminate(); /* ERROR */
-    if (nData_t2 == TEST_PATTERN_1) nTest1 = 1; wait1(20); /* t1 kör nu */
+    if (nData_t2 == TEST_PATTERN_1) nTest1 = 1; wait(20); /* t1 ko®r nu */
     /* start test 2 */
     if( no_messages(mb) != 1 ) terminate(); /* ERROR */
-    if(receive_wait(mb,&nData_t2) == DEADLINE_REACHED) /* t1 kör nu */
+    if(receive_wait(mb,&nData_t2) == DEADLINE_REACHED) /* t1 ko®r nu */
         terminate(); /* ERROR */ if( no_messages(mb) != 0 )
             terminate(); /* ERROR */
     if (nData_t2 == TEST_PATTERN_2) nTest2 = 1;
