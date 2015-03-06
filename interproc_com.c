@@ -29,7 +29,7 @@ exception push_mailbox(mailbox *mBox, msg *message){
 	message->pNext = mBox->pHead->pNext;
 	mBox->pHead->pNext->pPrevious = message;
 	mBox->pHead->pNext = message;
-	
+	mBox->nMessages++;
 	return OK;
 }
 
@@ -38,7 +38,7 @@ msg* pop_mailbox(mailbox *mBox){
 	msg* target_message = mBox->pTail->pPrevious;
 	target_message->pPrevious->pNext = target_message->pNext;
 	mBox->pTail->pPrevious = target_message->pPrevious;
-	
+	mBox->nMessages--;
 	target_message->pNext = NULL;
 	target_message->pPrevious = NULL;
 	
@@ -239,7 +239,6 @@ exception receive_wait(mailbox *mBox, void *data){
                 message->pBlock = receiving_task;
                 receiving_task->pMessage = message;
                 mBox->nBlockedMsg--;
-                mBox->nMessages++;
                 Running = peek_list(g_readylist)->pTask;
                 
                 
