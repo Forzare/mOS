@@ -9,9 +9,8 @@
 #include "kernel.h"
 #include <assert.h>
 #include "start.h"
-#include "main.h"
 
-mailbox *mb = NULL;
+mailbox *mB = NULL;
 
 
 volatile bool nTests[50];
@@ -40,7 +39,7 @@ void start(){
 
 	assert(init_kernel() == OK);
 	assert(create_task(task1, 2000));
-	assert((mb = create_mailbox(100, sizeof(int))));
+	assert((mB = create_mailbox(100, sizeof(int))));
 	
 	run();
 	

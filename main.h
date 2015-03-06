@@ -9,6 +9,7 @@
 #ifndef mOS_main_h
 #define mOS_main_h
 #include "kernel.h"
+#include <assert.h>
 
 
 extern uint TC;

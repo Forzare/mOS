@@ -9,6 +9,9 @@
 #include "list_admin.h"
 #include "timing.h"
 #include "main.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include "kernel.h"
 
 
 bool State = INIT;
@@ -16,7 +19,7 @@ bool State = INIT;
 
 void idle(){
 
-	for(;;);
+	for(;; TimerInt());
 	
 }
 
@@ -77,7 +80,7 @@ exception init_kernel(void){
 }
 
 exception create_task(void(* body)(), uint d){
-  volatile int firstrun = 1;
+  volatile int firstrun = TRUE;
     int status;
     TCB *newTCB = malloc(sizeof(TCB));
     listobj *newObj = malloc(sizeof(listobj));
@@ -96,9 +99,8 @@ exception create_task(void(* body)(), uint d){
     else{
       newTCB->DeadLine = ticks() + d;
     }
-        //newTCB->PC = malloc(sizeof(body));
         newTCB->PC = body;
-        newTCB->SP = &newTCB->StackSeg[STACK_SIZE-1];
+        newTCB->SP = &(newTCB->StackSeg[STACK_SIZE-1]);
         
         newObj->pTask = newTCB;
         newObj->nTCnt = ticks();
@@ -129,11 +131,11 @@ exception create_task(void(* body)(), uint d){
                   
                 }
                   
-
+                Running = peek_list(g_readylist)->pTask;
                 LoadContext();
             }
         }
-        Running = peek_list(g_readylist)->pTask;
+        
         
         return status;  
 }
@@ -157,8 +159,9 @@ void terminate(void){
 
 	remove_object = extract_readylist();
 
-
+        
 	free(remove_object);
+        Running = peek_list(g_readylist)->pTask;
 	LoadContext();
 
 }

@@ -22,12 +22,13 @@ list* create_list(void);
 
 
 /*Inserting objects in lists*/
-int insert_timerlist(listobj *insert_object, int nTCnt);
+int insert_timerlist(listobj *insert_object);
 exception push_list(list *list, listobj *insert_object);
+listobj* pop_list(list* target);
 
 /*Extracting objects from lists*/
 listobj* extract_timerlist(void);
-void extract_waitinglist(listobj *object);
+exception extract_waitinglist(listobj *object);
 listobj* extract_readylist(void);
 
 listobj* peek_list(list *target);
