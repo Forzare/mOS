@@ -174,11 +174,14 @@ exception send_wait(mailbox* mBox, void* pData){
         if(Running->DeadLine < ticks()){
             isr_off();
             
-            g_readylist->pHead->pNext->pMessage->pNext->pPrevious = g_readylist->pHead->pNext->pMessage->pPrevious;
-            g_readylist->pHead->pNext->pMessage->pPrevious->pNext = g_readylist->pHead->pNext->pMessage->pNext;
             
-            free(g_readylist->pHead->pNext->pMessage->pData);
-            free(g_readylist->pHead->pNext->pMessage);
+            listobj *target = peek_list(g_readylist);
+            
+            target->pMessage->pNext->pPrevious = target->pMessage->pPrevious;
+            target->pMessage->pPrevious->pNext = target->pMessage->pNext;
+            
+            free(target->pMessage->pData);
+            free(target->pMessage);
             
             mBox->nMessages--;
             mBox->nBlockedMsg--;
@@ -260,11 +263,13 @@ exception receive_wait(mailbox *mBox, void *data){
         if(ticks() > Running->DeadLine){
             isr_off();
             
-            g_readylist->pHead->pNext->pMessage->pNext->pPrevious = g_readylist->pHead->pNext->pMessage->pPrevious;
-            g_readylist->pHead->pNext->pMessage->pPrevious->pNext = g_readylist->pHead->pNext->pMessage->pNext;
+            listobj *target = peek_list(g_readylist);
             
-            free(peek_list(g_readylist)->pMessage->pData);
-            free(peek_list(g_readylist)->pMessage);
+            target->pMessage->pNext->pPrevious = target->pMessage->pPrevious;
+            target->pMessage->pPrevious->pNext = target->pMessage->pNext;
+            
+            free(target->pMessage->pData);
+            free(target->pMessage);
             
             mBox->nMessages--;
             mBox->nBlockedMsg++;
@@ -359,7 +364,7 @@ int receive_no_wait( mailbox* mBox, void* pData ){
             assert(sender);
             
             memcpy(pData, sender->pData, mBox->nDataSize);
-            
+            free(sender->pData);
             if (sender->pBlock != NULL) {
                 
                 status = extract_waitinglist(sender->pBlock);
@@ -370,7 +375,7 @@ int receive_no_wait( mailbox* mBox, void* pData ){
                 Running = peek_list(g_readylist)->pTask;
                 
             }
-            free(sender->pData);
+            
             free(sender);
             mBox->nBlockedMsg--;
             status = OK;
